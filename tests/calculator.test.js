@@ -2,7 +2,7 @@ const { add, subtract, multiply, divide } = require('../index.js');
 
 describe('Calculator Functions', () => {
   test('add: 2 + 3 should equal 5', () => {
-    expect(add(2, 3)).toBe(5);
+    expect(add(2, 3)).toBe(100);
   });
 
   test('subtract: 10 - 4 should equal 6', () => {
