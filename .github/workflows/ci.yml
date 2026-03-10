@@ -7,7 +7,7 @@ on:
     branches: [ main, master ]
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   test:
@@ -16,12 +16,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: 'npm'
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
       - name: Install dependencies
         run: npm ci
@@ -38,6 +42,8 @@ jobs:
         with:
           name: test-results
           path: coverage/
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
   build-docker:
     runs-on: ubuntu-latest
@@ -46,9 +52,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
       - name: Build Docker image
         uses: docker/build-push-action@v6
@@ -57,6 +67,8 @@ jobs:
           push: false
           tags: my-first-cicd:latest
           load: true
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
   deploy:
     runs-on: ubuntu-latest
