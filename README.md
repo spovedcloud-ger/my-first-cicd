@@ -1,8 +1,9 @@
 # My First CI/CD Project
 
-[![CI Pipeline](https://github.com/spovedcloud-ger/my-first-cicd/actions/workflows/ci.yml/badge.svg)](https://github.com/spovedcloud-ger/my-first-cicd/actions/workflows/ci.yml)
-[![Node.js CI](https://img.shields.io/badge/Node.js-24-green)](https://nodejs.org/)
-[![Docker](https://img.shields.io/badge/Docker-ready-blue)](https://www.docker.com/)
+![CI Pipeline](https://github.com/spovedcloud-ger/my-first-cicd/actions/workflows/ci.yml/badge.svg)
+![Node.js](https://img.shields.io/node/v/express)
+![Last Commit](https://img.shields.io/github/last-commit/spovedcloud-ger/my-first-cicd)
+![GitHub Repo Size](https://img.shields.io/github/repo-size/spovedcloud-ger/my-first-cicd)
 
 A simple Node.js app with automated testing pipeline.
 
