@@ -1,5 +1,9 @@
 # My First CI/CD Project
 
+[![CI Pipeline](https://github.com/spovedcloud-ger/my-first-cicd/actions/workflows/ci.yml/badge.svg)](https://github.com/spovedcloud-ger/my-first-cicd/actions/workflows/ci.yml)
+[![Node.js CI](https://img.shields.io/badge/Node.js-24-green)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-ready-blue)](https://www.docker.com/)
+
 A simple Node.js app with automated testing pipeline.
 
 ## What's Included
