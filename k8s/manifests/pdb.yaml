@@ -1,0 +1,41 @@
+# Kubernetes PodDisruptionBudget for zero-downtime deployments
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: my-first-cicd-app
+  labels:
+    app: my-first-cicd
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: my-first-cicd
+      tier: backend
+---
+# PodDisruptionBudget for PostgreSQL
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: my-first-cicd-postgres
+  labels:
+    app: my-first-cicd
+    component: postgres
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: my-first-cicd-postgres
+---
+# PodDisruptionBudget for Redis
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: my-first-cicd-redis
+  labels:
+    app: my-first-cicd
+    component: redis
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: my-first-cicd-redis

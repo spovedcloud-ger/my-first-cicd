@@ -1,0 +1,194 @@
+# Default values for my-first-cicd Helm chart
+
+# Global settings
+global:
+  nameOverride: ""
+  fullnameOverride: ""
+
+# Application configuration
+replicaCount: 2
+
+image:
+  repository: ghcr.io/spovedcloud-ger/my-first-cicd
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Service account
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+  # Annotations to add to the service account
+  annotations: {}
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3000"
+  prometheus.io/path: "/metrics"
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+# Container security context
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+  nodePort: 30080
+  annotations: {}
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+  hosts:
+    - host: my-first-cicd.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          servicePort: 80
+  tls:
+    - secretName: my-first-cicd-tls
+      hosts:
+        - my-first-cicd.example.com
+
+# Resources limits and requests
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - my-first-cicd
+          topologyKey: kubernetes.io/hostname
+
+# Environment variables (from ConfigMap)
+config:
+  NODE_ENV: "production"
+  PORT: "3000"
+  DB_HOST: "my-first-cicd-postgres"
+  DB_PORT: "5432"
+  DB_NAME: "appdb"
+  REDIS_HOST: "my-first-cicd-redis"
+  REDIS_PORT: "6379"
+  LOG_LEVEL: "info"
+  METRICS_ENABLED: "true"
+
+# Secrets (will be stored as stringData)
+secrets:
+  DB_USER: "appuser"
+  DB_PASSWORD: "changeme"
+  REDIS_PASSWORD: "changeme"
+  APP_SECRET: "changeme"
+
+# Persistence for PostgreSQL
+persistence:
+  enabled: false
+  storageClass: "standard"
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  annotations: {}
+
+# Redis configuration (external Redis - not managed by this chart)
+redis:
+  enabled: false
+  host: "my-first-cicd-redis"
+  port: 6379
+
+# PostgreSQL configuration (external PostgreSQL - not managed by this chart)
+postgres:
+  enabled: false
+  host: "my-first-cicd-postgres"
+  port: 5432
+  database: "appdb"
+
+# Network Policy
+networkPolicy:
+  enabled: true
+
+# Metrics
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s

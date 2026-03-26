@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "my-first-cicd.fullname" . }}
+  labels:
+    {{- include "my-first-cicd.labels" . | nindent 4 }}
+    tier: backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "my-first-cicd.selectorLabels" . | nindent 6 }}
+      tier: backend
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "my-first-cicd.selectorLabels" . | nindent 8 }}
+        tier: backend
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "my-first-cicd.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.config.PORT | default 3000 }}
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 10 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 10 }}
+          env:
+            - name: NODE_ENV
+              value: {{ .Values.config.NODE_ENV | quote }}
+            - name: PORT
+              value: {{ .Values.config.PORT | quote }}
+            - name: DB_HOST
+              value: {{ .Values.config.DB_HOST | quote }}
+            - name: DB_PORT
+              value: {{ .Values.config.DB_PORT | quote }}
+            - name: DB_NAME
+              value: {{ .Values.config.DB_NAME | quote }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "my-first-cicd.fullname" . }}-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "my-first-cicd.fullname" . }}-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_HOST
+              value: {{ .Values.config.REDIS_HOST | quote }}
+            - name: REDIS_PORT
+              value: {{ .Values.config.REDIS_PORT | quote }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "my-first-cicd.fullname" . }}-secrets
+                  key: REDIS_PASSWORD
+            - name: LOG_LEVEL
+              value: {{ .Values.config.LOG_LEVEL | quote }}
+            - name: METRICS_ENABLED
+              value: {{ .Values.config.METRICS_ENABLED | quote }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

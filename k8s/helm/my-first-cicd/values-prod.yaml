@@ -1,0 +1,135 @@
+# Production environment values
+# Use for production environments with high availability and security
+
+replicaCount: 3
+
+image:
+  tag: "latest"
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+  nodePortEnabled: false
+  loadBalancerEnabled: true
+  loadBalancerAnnotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  stagingEnabled: false
+  hosts:
+    - host: my-first-cicd.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          servicePort: 80
+  tls:
+    - secretName: my-first-cicd-tls
+      hosts:
+        - my-first-cicd.example.com
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+networkPolicy:
+  enabled: true
+
+config:
+  NODE_ENV: "production"
+  PORT: "3000"
+  DB_HOST: "my-first-cicd-postgres-prod"
+  DB_PORT: "5432"
+  DB_NAME: "appdb_prod"
+  REDIS_HOST: "my-first-cicd-redis-prod"
+  REDIS_PORT: "6379"
+  LOG_LEVEL: "info"
+  METRICS_ENABLED: "true"
+
+secrets:
+  DB_USER: "produser"
+  DB_PASSWORD: "changeme"
+  REDIS_PASSWORD: "changeme"
+  APP_SECRET: "changeme"
+
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app
+              operator: In
+              values:
+                - my-first-cicd
+        topologyKey: kubernetes.io/hostname
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - my-first-cicd
+          topologyKey: topology.kubernetes.io/zone
+
+nodeSelector:
+  workload: production
+
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "production"
+    effect: "NoSchedule"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+
+persistence:
+  enabled: true
+  storageClass: "gp3"
+  accessMode: ReadWriteOnce
+  size: 5Gi
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s

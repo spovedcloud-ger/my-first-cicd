@@ -1,0 +1,83 @@
+# Kubernetes Deployment for my-first-cicd App
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-first-cicd-app
+  labels:
+    app: my-first-cicd
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-first-cicd
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: my-first-cicd
+        tier: backend
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/spovedcloud-ger/my-first-cicd:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: my-first-cicd-config
+            - secretRef:
+                name: my-first-cicd-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      restartPolicy: Always
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-first-cicd-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-first-cicd-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "my-first-cicd.fullname" . }}
+  labels:
+    {{- include "my-first-cicd.labels" . | nindent 4 }}
+    tier: backend
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+      {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+  selector:
+    {{- include "my-first-cicd.selectorLabels" . | nindent 4 }}
+    tier: backend
+---
+# NodePort Service (for development)
+{{- if .Values.service.nodePortEnabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "my-first-cicd.fullname" . }}-nodeport
+  labels:
+    {{- include "my-first-cicd.labels" . | nindent 4 }}
+    tier: backend
+spec:
+  type: NodePort
+  ports:
+    - port: {{ .Values.service.port | default 3000 }}
+      targetPort: http
+      nodePort: {{ .Values.service.nodePort | default 30080 }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "my-first-cicd.selectorLabels" . | nindent 4 }}
+    tier: backend
+{{- end }}
+---
+# LoadBalancer Service (for cloud providers)
+{{- if .Values.service.loadBalancerEnabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "my-first-cicd.fullname" . }}-lb
+  labels:
+    {{- include "my-first-cicd.labels" . | nindent 4 }}
+    tier: backend
+  {{- with .Values.service.loadBalancerAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: http
+      protocol: TCP
+      name: https
+  selector:
+    {{- include "my-first-cicd.selectorLabels" . | nindent 4 }}
+    tier: backend
+{{- end }}

@@ -1,0 +1,60 @@
+# Development environment values
+# Use for local development or minikube/kind clusters
+
+replicaCount: 1
+
+image:
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 3000
+  nodePort: 30090
+  nodePortEnabled: true
+  loadBalancerEnabled: false
+
+ingress:
+  enabled: false
+  stagingEnabled: false
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: false
+
+networkPolicy:
+  enabled: false
+
+config:
+  NODE_ENV: "development"
+  PORT: "3000"
+  DB_HOST: "localhost"
+  DB_PORT: "5432"
+  DB_NAME: "appdb"
+  REDIS_HOST: "localhost"
+  REDIS_PORT: "6379"
+  LOG_LEVEL: "debug"
+  METRICS_ENABLED: "true"
+
+secrets:
+  DB_USER: "devuser"
+  DB_PASSWORD: "devpassword"
+  REDIS_PASSWORD: "devpassword"
+  APP_SECRET: "devsecret"
+
+affinity: {}
+
+nodeSelector: {}
+
+tolerations: []

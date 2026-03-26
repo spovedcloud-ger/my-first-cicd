@@ -1,0 +1,19 @@
+apiVersion: v2
+name: my-first-cicd
+description: A Helm chart for my-first-cicd Node.js application
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - nodejs
+  - express
+  - cicd
+  - kubernetes
+maintainers:
+  - name: spovedcloud-ger
+    url: https://github.com/spovedcloud-ger
+sources:
+  - https://github.com/spovedcloud-ger/my-first-cicd
+annotations:
+  category: Application
+  licenses: Apache-2.0

@@ -1,0 +1,40 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }}
+  $ helm get all {{ .Release.Name }}
+
+To get the application URL:
+
+{{- if .Values.ingress.enabled }}
+  {{- range $host := .Values.ingress.hosts }}
+    http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}
+  {{- end }}
+{{- else if eq .Values.service.type "LoadBalancer" }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  You can watch the status by running:
+  
+  $ kubectl get svc -w {{ include "my-first-cicd.fullname" . }}
+{{- else if eq .Values.service.type "NodePort" }}
+  NOTE: You can access the application using:
+  
+  $ kubectl exec -it <pod-name> -- node -e "require('http').createServer((req,res)=>res.end('OK')).listen({{ .Values.service.targetPort }})"
+{{- end }}
+
+To view the logs:
+
+  $ kubectl logs -f deployment/{{ include "my-first-cicd.fullname" . }}
+
+To scale the deployment:
+
+  $ kubectl scale deployment/{{ include "my-first-cicd.fullname" . }} --replicas=3
+
+To enable autoscaling:
+
+  $ kubectl autoscale deployment/{{ include "my-first-cicd.fullname" . }} --min=2 --max=10 --cpu-percent=70
+
+Health check endpoint: http://localhost:3000/api/health
+Metrics endpoint: http://localhost:3000/metrics

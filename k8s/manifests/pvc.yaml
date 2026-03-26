@@ -1,0 +1,31 @@
+# Kubernetes PersistentVolumeClaim for PostgreSQL data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-first-cicd-postgres-data
+  labels:
+    app: my-first-cicd
+    component: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+---
+# PersistentVolumeClaim for Redis data (if using persistent Redis)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-first-cicd-redis-data
+  labels:
+    app: my-first-cicd
+    component: redis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 512Mi
+  storageClassName: standard

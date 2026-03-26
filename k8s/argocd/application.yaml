@@ -1,0 +1,56 @@
+# ArgoCD Application - my-first-cicd
+# This tells ArgoCD to sync your Kubernetes manifests from Git to your cluster
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-first-cicd
+  namespace: argocd
+  # Finalizers ensure proper cleanup when deleting
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Project name (default project)
+  project: default
+  
+  # Source: Where are the manifests in Git?
+  source:
+    repoURL: https://github.com/spovedcloud-ger/my-first-cicd.git
+    targetRevision: HEAD
+    path: k8s/helm/my-first-cicd
+    helm:
+      valueFiles:
+        - values-dev.yaml
+    
+  # Destination: Where to deploy?
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: my-first-cicd
+  
+  # Sync policy
+  syncPolicy:
+    # Automatic sync when Git changes
+    automated:
+      prune: true      # Delete resources removed from Git
+      selfHeal: true   # Fix resources modified outside Git
+      allowEmpty: false
+    
+    # Sync options
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    
+    # Retry configuration
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  # Ignore differences (for fields managed by other tools)
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

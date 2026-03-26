@@ -1,0 +1,63 @@
+# Kubernetes Service for my-first-cicd App
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-first-cicd-app
+  labels:
+    app: my-first-cicd
+    tier: backend
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+  selector:
+    app: my-first-cicd
+    tier: backend
+---
+# NodePort Service (for development)
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-first-cicd-app-nodeport
+  labels:
+    app: my-first-cicd
+    tier: backend
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      nodePort: 30080
+      protocol: TCP
+  selector:
+    app: my-first-cicd
+    tier: backend
+---
+# LoadBalancer Service (for cloud providers)
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-first-cicd-app-lb
+  labels:
+    app: my-first-cicd
+    tier: backend
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: http
+      protocol: TCP
+  selector:
+    app: my-first-cicd
+    tier: backend
