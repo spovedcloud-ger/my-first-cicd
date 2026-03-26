@@ -31,7 +31,7 @@ spec:
     - name: http
       port: 3000
       targetPort: http
-      nodePort: 30080
+      nodePort: 30095
       protocol: TCP
   selector:
     app: my-first-cicd
