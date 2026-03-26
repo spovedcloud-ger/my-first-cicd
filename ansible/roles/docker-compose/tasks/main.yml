@@ -1,0 +1,32 @@
+---
+# Docker Compose Installation Tasks
+
+- name: Check if Docker Compose is installed
+  command: docker compose version
+  register: docker_compose_check
+  changed_when: false
+  failed_when: false
+
+- name: Install Docker Compose standalone (if not installed)
+  block:
+    - name: Download Docker Compose
+      get_url:
+        url: https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Create docker-compose symlink
+      file:
+        src: /usr/local/bin/docker-compose
+        dest: /usr/bin/docker-compose
+        state: link
+  when: docker_compose_check.rc != 0
+
+- name: Verify Docker Compose installation
+  command: docker-compose --version
+  register: docker_compose_version
+  changed_when: false
+
+- name: Display Docker Compose version
+  debug:
+    msg: "Docker Compose version: {{ docker_compose_version.stdout }}"

@@ -1,0 +1,32 @@
+---
+# Ansible Playbook for Oracle Cloud CI/CD App Deployment
+
+- name: Deploy Multi-Container App to Oracle Cloud
+  hosts: app_servers
+  become: yes
+  gather_facts: yes
+
+  roles:
+    - docker
+    - docker-compose
+    - app
+
+  post_tasks:
+    - name: Wait for application to be ready
+      uri:
+        url: "http://localhost:{{ app_port }}/api/health"
+        status_code: 200
+      register: app_health
+      until: app_health.status == 20
+      retries: 10
+      delay: 5
+      ignore_errors: yes
+
+    - name: Display deployment info
+      debug:
+        msg: |
+          ================================================
+          Deployment Complete!
+          App URL: http://{{ ansible_host }}:{{ app_port }}
+          Health Check: http://{{ ansible_host }}:{{ app_port }}/api/health
+          ================================================

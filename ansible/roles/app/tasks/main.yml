@@ -1,0 +1,66 @@
+---
+# Application Deployment Tasks
+
+- name: Create application directory
+  file:
+    path: "{{ app_directory }}"
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+
+- name: Copy docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ app_directory }}/docker-compose.yml"
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Copy application files
+  copy:
+    src: ../../../
+    dest: "{{ app_directory }}"
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+    exclude:
+      - "terraform/**"
+      - "ansible/**"
+      - "node_modules/**"
+      - ".git/**"
+      - "*.md"
+
+- name: Build Docker images
+  command: docker-compose -f {{ app_directory }}/docker-compose.yml build
+  args:
+    chdir: "{{ app_directory }}"
+  become: yes
+  become_user: ubuntu
+
+- name: Stop existing containers
+  command: docker-compose -f {{ app_directory }}/docker-compose.yml down
+  args:
+    chdir: "{{ app_directory }}"
+  become: yes
+  become_user: ubuntu
+  ignore_errors: yes
+
+- name: Start containers
+  command: docker-compose -f {{ app_directory }}/docker-compose.yml up -d
+  args:
+    chdir: "{{ app_directory }}"
+  become: yes
+  become_user: ubuntu
+
+- name: Check container status
+  command: docker-compose -f {{ app_directory }}/docker-compose.yml ps
+  args:
+    chdir: "{{ app_directory }}"
+  register: container_status
+  become: yes
+  become_user: ubuntu
+
+- name: Display container status
+  debug:
+    var: container_status.stdout

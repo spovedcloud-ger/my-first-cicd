@@ -1,0 +1,67 @@
+---
+# Nginx Installation and SSL Configuration Tasks
+
+- name: Install Nginx and Certbot
+  apt:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+    update_cache: yes
+
+- name: Check if SSL certificate exists
+  stat:
+    path: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"
+  register: ssl_cert_check
+
+- name: Stop Nginx temporarily for certificate generation
+  service:
+    name: nginx
+    state: stopped
+  when: not ssl_cert_check.stat.exists
+
+- name: Obtain SSL certificate from Let's Encrypt
+  command: >
+    certbot certonly --standalone --non-interactive --agree-tos 
+    --email {{ email }} -d {{ domain }} -d www.{{ domain }}
+  when: not ssl_cert_check.stat.exists
+  register: certbot_result
+
+- name: Copy Nginx configuration
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/default
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Enable Nginx site
+  file:
+    src: /etc/nginx/sites-available/default
+    dest: /etc/nginx/sites-enabled/default
+    state: link
+
+- name: Test Nginx configuration
+  command: nginx -t
+  register: nginx_test
+  changed_when: false
+
+- name: Start and enable Nginx
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Setup automatic certificate renewal
+  cron:
+    name: certbot-renew
+    job: "certbot renew --quiet --deploy-hook 'systemctl reload nginx'"
+    hour: "0,12"
+    minute: "0"
+
+- name: Display SSL certificate info
+  command: certbot certificates
+  register: cert_info
+  changed_when: false
+  when: ssl_cert_check.stat.exists

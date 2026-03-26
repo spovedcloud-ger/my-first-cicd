@@ -1,4 +1,4 @@
-const { add, subtract, multiply, divide } = require('../index.js');
+const { add, subtract, multiply, divide } = require('../calculator.js');
 
 describe('Calculator Functions', () => {
   test('add: 2 + 3 should equal 5', () => {
