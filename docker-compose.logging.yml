@@ -1,0 +1,128 @@
+version: '3.8'
+
+# ============================================================
+# EFK Logging Stack for Local Development
+# EFK = Elasticsearch + Fluent Bit + Kibana
+#
+# Usage:
+#   Start logging stack:
+#     docker-compose -f docker-compose.logging.yml up -d
+#
+#   Start app + logging together:
+#     docker-compose -f docker-compose.yml -f docker-compose.logging.yml up -d
+#
+#   View Kibana:  http://localhost:5601
+#   View Elasticsearch: http://localhost:9200
+#   View Fluent Bit health: http://localhost:2020
+# ============================================================
+
+services:
+
+  # --------------------------------------------------------
+  # Elasticsearch — Log storage and search engine
+  # Single-node mode (no clustering) for local development
+  # Security disabled for simplicity (DO NOT use in prod)
+  # --------------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: efk-elasticsearch
+    restart: unless-stopped
+    environment:
+      # Single-node mode — no cluster setup needed
+      - discovery.type=single-node
+      # Disable authentication for local dev simplicity
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      # Limit JVM heap to avoid OOM on local machine
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      # Set cluster name
+      - cluster.name=my-first-cicd-logs
+      - node.name=es-node-1
+    ports:
+      - "9200:9200"   # REST API
+      - "9300:9300"   # Internal cluster communication
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - logging-network
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  # --------------------------------------------------------
+  # Kibana — Log visualization and dashboard UI
+  # Connects to Elasticsearch automatically
+  # Access: http://localhost:5601
+  # --------------------------------------------------------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    container_name: efk-kibana
+    restart: unless-stopped
+    environment:
+      # Point to our local Elasticsearch
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      # Disable telemetry
+      - TELEMETRY_ENABLED=false
+      # No security needed
+      - XPACK_SECURITY_ENABLED=false
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=a_32_char_long_key_for_local_dev_
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - logging-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  # --------------------------------------------------------
+  # Fluent Bit — Lightweight log collector and shipper
+  # Reads Docker container logs from the host and ships
+  # them to Elasticsearch
+  # --------------------------------------------------------
+  fluent-bit:
+    image: cr.fluentbit.io/fluent/fluent-bit:3.2
+    container_name: efk-fluent-bit
+    restart: unless-stopped
+    ports:
+      - "2020:2020"   # Fluent Bit health/metrics HTTP server
+      - "24224:24224" # Forward input (for apps that push logs)
+    volumes:
+      # Mount Fluent Bit configuration
+      - ./logging/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./logging/fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro
+      # Mount Docker container log files (read-only)
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      # Database for tracking file positions (prevents re-reading logs on restart)
+      - fluent_bit_db:/var/log
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - logging-network
+
+volumes:
+  elasticsearch_data:
+    driver: local
+  fluent_bit_db:
+    driver: local
+
+networks:
+  logging-network:
+    name: logging-network
+    driver: bridge

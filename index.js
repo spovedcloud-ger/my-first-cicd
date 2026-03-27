@@ -46,14 +46,35 @@ register.registerMetric(httpRequestTotal);
 register.registerMetric(databaseQueryDuration);
 register.registerMetric(redisOperationDuration);
 
-// Middleware to track request metrics
+// Structured JSON Logger
+const logger = {
+  info: (message, meta = {}) => {
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), level: 'info', message, ...meta }));
+  },
+  error: (message, meta = {}) => {
+    console.error(JSON.stringify({ timestamp: new Date().toISOString(), level: 'error', message, ...meta }));
+  }
+};
+
+// Middleware to track request metrics and log requests
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
     const duration = (Date.now() - start) / 1000;
     const route = req.route ? req.route.path : req.path;
+    
+    // Metrics
     httpRequestDuration.labels(req.method, route, res.statusCode).observe(duration);
     httpRequestTotal.labels(req.method, route, res.statusCode).inc();
+    
+    // Structured Log
+    logger.info('HTTP Request', {
+      method: req.method,
+      url: req.url,
+      path: route,
+      statusCode: res.statusCode,
+      durationMs: duration * 1000
+    });
   });
   next();
 });
@@ -75,20 +96,20 @@ const redisClient = createClient({
   },
 });
 
-redisClient.on('error', (err) => console.error('Redis Client Error', err));
+redisClient.on('error', (err) => logger.error('Redis Client Error', { error: err.message }));
 
 // Initialize connections
 async function initializeConnections() {
   try {
     // Test PostgreSQL
     const pgResult = await pool.query('SELECT NOW()');
-    console.log('✅ PostgreSQL connected:', pgResult.rows[0].now);
+    logger.info('PostgreSQL connected', { time: pgResult.rows[0].now });
 
     // Connect Redis
     await redisClient.connect();
-    console.log('✅ Redis connected');
+    logger.info('Redis connected');
   } catch (error) {
-    console.error('❌ Connection error:', error.message);
+    logger.error('Connection error', { error: error.message });
   }
 }
 
@@ -300,7 +321,7 @@ module.exports = { app, pool, redisClient, initializeConnections };
 if (require.main === module) {
   initializeConnections().then(() => {
     app.listen(port, () => {
-      console.log(`App running at http://localhost:${port}`);
+      logger.info('App running', { port, url: `http://localhost:${port}` });
     });
   });
 }

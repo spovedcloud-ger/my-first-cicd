@@ -1,0 +1,1 @@
+{"attributes":{"title":"my-first-cicd-logs-*","timeFieldName":"@timestamp","customFormats":"{}","uiRestrictions":"{}","fields":"[]"},"id":"1","type":"index-pattern","version":"8.12.0"}
