@@ -11,8 +11,8 @@ service:
   type: ClusterIP
   port: 80
   targetPort: 3000
-  nodePort: 30090
-  nodePortEnabled: false
+  nodePort: 30095
+  nodePortEnabled: true
   loadBalancerEnabled: false
 
 ingress:
@@ -39,19 +39,19 @@ networkPolicy:
 config:
   NODE_ENV: "development"
   PORT: "3000"
-  DB_HOST: "localhost"
+  DB_HOST: "my-first-cicd-postgres"
   DB_PORT: "5432"
   DB_NAME: "appdb"
-  REDIS_HOST: "localhost"
+  REDIS_HOST: "my-first-cicd-redis"
   REDIS_PORT: "6379"
   LOG_LEVEL: "debug"
   METRICS_ENABLED: "true"
 
 secrets:
-  DB_USER: "devuser"
-  DB_PASSWORD: "devpassword"
-  REDIS_PASSWORD: "devpassword"
-  APP_SECRET: "devsecret"
+  DB_USER: "appuser"
+  DB_PASSWORD: "changeme"
+  REDIS_PASSWORD: "changeme"
+  APP_SECRET: "changeme"
 
 affinity: {}
 

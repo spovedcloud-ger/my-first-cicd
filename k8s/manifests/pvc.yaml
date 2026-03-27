@@ -12,7 +12,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: standard
+  storageClassName: hostpath
 ---
 # PersistentVolumeClaim for Redis data (if using persistent Redis)
 apiVersion: v1
@@ -28,4 +28,4 @@ spec:
   resources:
     requests:
       storage: 512Mi
-  storageClassName: standard
+  storageClassName: hostpath

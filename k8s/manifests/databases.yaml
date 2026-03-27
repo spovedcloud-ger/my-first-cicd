@@ -1,0 +1,124 @@
+# Kubernetes Deployment for PostgreSQL
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-first-cicd-postgres
+  namespace: my-first-cicd
+  labels:
+    app: my-first-cicd
+    component: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-first-cicd
+      component: postgres
+  template:
+    metadata:
+      labels:
+        app: my-first-cicd
+        component: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: my-first-cicd-secrets
+                  key: DB_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-first-cicd-secrets
+                  key: DB_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: my-first-cicd-config
+                  key: DB_NAME
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: my-first-cicd-postgres-data
+---
+# Kubernetes Service for PostgreSQL
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-first-cicd-postgres
+  namespace: my-first-cicd
+  labels:
+    app: my-first-cicd
+    component: postgres
+spec:
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: my-first-cicd
+    component: postgres
+---
+# Kubernetes Deployment for Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-first-cicd-redis
+  namespace: my-first-cicd
+  labels:
+    app: my-first-cicd
+    component: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-first-cicd
+      component: redis
+  template:
+    metadata:
+      labels:
+        app: my-first-cicd
+        component: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          command: ["redis-server", "--requirepass", "$(REDIS_PASSWORD)"]
+          ports:
+            - containerPort: 6379
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: my-first-cicd-secrets
+                  key: REDIS_PASSWORD
+          volumeMounts:
+            - name: redis-storage
+              mountPath: /data
+      volumes:
+        - name: redis-storage
+          persistentVolumeClaim:
+            claimName: my-first-cicd-redis-data
+---
+# Kubernetes Service for Redis
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-first-cicd-redis
+  namespace: my-first-cicd
+  labels:
+    app: my-first-cicd
+    component: redis
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    app: my-first-cicd
+    component: redis
